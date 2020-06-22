@@ -1,0 +1,471 @@
+Vim Cheat Sheet,https://vim.rtorr.com/,,
+Use GNU tools in MacOS,brew install coreutils findutils gnu-tar gnu-sed gawk gnutls gnu-indent gnu-getopt grep,,
+,,,
+ll is aliased to `ls -l',$ ll,,
+list all aliases,$ alias,"Note: zsh will load aliases for its plugins, e.g:
+${HOME}/.oh-my-zsh/plugins/docker-compose/docker-compose.plugin.zsh",
+,"$ alias_value ll
+ls -lh",,
+,$ ll -clt,"-c   with -lt sort by, and show, ctime (time of last modification of file status information);",
+ps - report a snapshot of the current processes,"ps -ef
+ps -elf
+ps -el | grep java
+ps aux
+kill [proccess id]","-a     Display information about other users' processes as well as your own.  This
+        will skip any processes which do not have a controlling terminal, unless the
+        -x option is also specified.
+
+-e     Select all processes
+
+-f      Does full-format listing. This option can be combined with many other UNIX-style   options to add additional columns. It also causes the command arguments to be
+                       printed. When used with -L, the NLWP (number of threads) and LWP (thread ID) columns will be added. See the c option, the format keyword args, and the format
+                       keyword comm.
+
+-l    Display information associated with the following keywords: uid, pid, ppid,
+             flags, cpu, pri, nice, vsz=SZ, rss, wchan, state=S, paddr=ADDR, tty, time,
+             and command=CMD.
+
+-u   Display the processes belonging to the specified usernames.
+
+-x    When displaying processes matched by other options, include processes which
+       do not have a controlling terminal.  This is the opposite of the -X option.
+       If both -X and -x are specified in the same command, then ps will use the one
+       which was specified last.",
+,,,
+lsof - list open files,"$ lsof -i :3306
+COMMAND   PID        USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+com.docke 997 chenzhongyu   50u  IPv6 0x1e10f16c75628353      0t0  TCP *:mysql (LISTEN)","-i    selects  the listing of files any of whose Internet address matches the address specified
+-p   selects the listing of files for the processes",
+,"$ lsof -U | grep docker.sock
+com.docke  996 chenzhongyu   22u  unix 0x1e10f16c80118633      0t0      docker.sock",-U selects the listing of UNIX domain socket files.,
+,lsof -p 12738,List open files and ports by process ID 1234,
+nc (Netcat) — arbitrary TCP and UDP connections and listens,,,
+Client/Server communication,"Listens on port for incoming connection
+$ nc -l 9200
+
+Make TCP connection
+$ nc localhost 9200
+$ nc -zv localhost 9200
+","-l    Used to specify that nc should listen for an incoming connection rather than initiate a connection to a remote host.  It is an error to use this option in conjunction with the -p, -s, or -z options.  Additionally, any timeouts specified with the -w option are ignored.
+
+-z   Specifies that nc should just scan for listening daemons, without sending any data to them.
+
+-v   Verbose""",
+Port scan,"$ nc -zv localhost 20-30
+
+Connection to 127.0.0.1 22 port [tcp/ssh] succeeded!
+Connection to 127.0.0.1 25 port [tcp/smtp] succeeded!",,
+Data Transfer,"$ nc -l 1234 > filename.out
+
+$ nc -N 127.0.1 1234 < filename.in
+",,
+,,,
+List jar file content w/o open it,jar tvf jarfile.jar | vim -,"OPTIONS
+ c    Create jar
+ x    Extract jar 
+ t     List table of content of jar
+ f     Specify the jar file",
+,,,
+Discard standard error ,"2>&1 > /dev/null
+
+e.g:
+
+while ! $(curl -s -XPOST ""http://localhost:9200/_xpack/license/start_trial?acknowledge=true"" | grep '""acknowledged"":true' 2>&1 > /dev/null); do
+    sleep 2
+    echo -e ""\nRetry activating Trial license""
+done","2>&1             redirects (>&) standard error (2) to standard output (1)
+> /dev/null    redirects standard output (stdout) to /dev/null, which discards it.
+
+https://stackoverflow.com/questions/10508843/what-is-dev-null-21
+
+/dev/null       is a special file called the null device in Unix systems
+>&                 is an operator that copies the output of the first file descriptor (2) and redirects to the output of the second file descriptor (1)",
+Exit Status $?,"$ echo 'text' > /dev/null
+
+$ echo $?
+0",$?       symbol is a special variable that always contains the exit status of the previous command,
+,"$ ls -0 > /dev/null 2>&1
+$ echo $?
+1
+
+","Suppressing the error output (stderr) of the invalid ls -0 command, redirect it to standard output (stdout), writing it to /dev/null thereby immediately discarding it
+
+$ ls -0
+ls: illegal option -- 0
+",
+,"function check_command_exists() {
+  command -v $1 > /dev/null 2>&1
+}
+
+$ check_command_exists ls; echo $?
+0
+
+$ check_command_exists xx; echo $?
+1
+",This technique is commonly used to tell whether a command exists,
+,"$ _lookupEs() {
+    local es_executable=$(sudo bash -lc 'command -v es') val
+    [[ ! -z ""${es_executable}"" ]] || {
+        echo ""Error: cannot find es executable"" 1>&2
+        exit 1
+    }
+    val=$(${es_executable} $1) || {
+        echo ""Error: cannot lookup es version: $1"" 1>&2
+        exit 1
+    }
+    echo ${val}
+}
+
+$ echo $(_lookupEs version)
+cluster_name:babylon-es-docker version_number:6.8.0",,
+,,,
+Current script's location,"DIR=""$( cd ""$( dirname ""${BASH_SOURCE[0]}"" )"" && pwd )""
+PARENT_DIR=$(dirname ${DIR})
+
+
+$ dirname $(pwd)
+","Get the location of the current running bash, rather than your current location",
+Enter y to the command prompt and then grep the generated password,ESPASS=$(echo y | /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto | grep 'elastic = ' | cut -d' ' -f4),,
+cut - Remove Sections from Each Line of File,"$ echo 'I\tlove\tSH' | cut -f 3
+SH
+
+$ echo 'I|love|SH' | cut -d '|' -f 3
+SH
+
+$ echo '29/04/1981' | cut -c 7-10
+1981","-f cut by fields
+-c cut by characters
+-d delimeter",
+,,,
+tr -- translate characters,"$echo '29/04/1981' | tr / -
+29-04-1981
+
+$echo 'i love sh' | tr a-z A-Z
+I LOVE SH
+
+$echo 'IIII love SH' | tr -s 'I'
+I love SH",-s squeeze (delete) repeated characters,
+cat from standard input,"$ echo 'would be 2nd line' > file.txt
+$ echo '1st line' | cat - file.txt
+1st line
+would be 2nd line",cat with '-' to read standard input,
+du (disc usage) command estimates file_path space usage,$ du -sh .,"-h      ""Human-readable"" output
+-s       displays a summary of the entire base directory, rather than each separate subdirectory",https://unix.stackexchange.com/questions/185764/how-do-i-get-the-size-of-a-directory-on-the-command-line
+df  display free disk space,"$ df -h
+
+Filesystem      Size  Used Avail Use% Mounted on
+devtmpfs         59G     0   59G   0% /dev
+tmpfs            59G     0   59G   0% /dev/shm
+tmpfs            59G  282M   59G   1% /run
+tmpfs            59G     0   59G   0% /sys/fs/cgroup
+/dev/sda3        39G  3.9G   35G  11% /
+/dev/sda1       200M  9.7M  191M   5% /boot/efi
+/dev/nvme0n1    5.9T  5.9T  3.6G 100% /mnt/vol0
+tmpfs            12G     0   12G   0% /run/user/2000
+tmpfs            12G     0   12G   0% /run/user/1000",,
+sudo as another user,"[opc@acx-bab-build-node-05 home]$ sudo su - jenkins
+Last login: Wed Nov 20 22:39:18 GMT 2019 on pts/2
+",,
+,,,
+"pbcopy, pbpaste - provide copying and pasting to the pasteboard (the Clipboard) from command line","$ cat file.txt | xclip -selection clipboard
+",,
+,,,
+grep,,,
+Count number of Errors ,$ grep -c 'Error' /var/log/babylon/app/20*.log,,
+Searching for Files with grep,"# list names of bash files under /projects directory and ignore permission errors
+$ grep -rl '^#!/bin/bash' ~/projects/* 2>/dev/null","-l                         option will list file names rather than content
+-r                         recursive
+2>/dev/null          to redirect errors (for files you don't have permission to)",
+,"# grep by patterns w/o having to escape meta-chars
+$ echo 'AC\nDC\nXC' | grep -E '(A|D)C'
+AC
+DC
+
+# its same as doing
+$ echo 'AC\nDC\nXC' | grep '\(A\|D\)C'","egrep is same as grep -E
+
+egrep or grep -E (E for Extended grep) understands meta-characters like '(', ')', '|'",
+grep with regular expression,"$ for i in {1..100}; do echo ""(${RANDOM:0:2}) ${RANDOM:0:3}-${RANDOM:0:4}"" >> phonelist.txt; done
+# phonelist.txt
+(86) 665-1436
+(12) 440-2995
+(11) 131-1466
+(11) 229-2986
+(24) 501-2900
+(24) 959-2897
+(52) 259-2727
+(31) 193-1944
+(32) 152-7893
+(..) ........
+
+$ grep -E '^\(21|86\) [0-9]{3}-[0-9]{4}$' phonelist.txt
+(21) 212-2272
+(21) 215-2378
+(21) 228-8838
+(86) 295-2662
+",,
+,,,
+find,,,
+Count number of files by extension,"# 
+$ find ./src/main -type f | sed 's/.*\.//' | sort | uniq -c
+360 java
+1 jpg
+24 js
+6 json
+120 jsp
+216 kt
+1 lock
+2 map
+6 md
+2 p12
+
+","# use sed to remove any character before the last dot and reveal the file extension
+$ echo 'app.log' | sed 's/.*\.//'
+log
+
+
+$ echo 'app.log' | sed 's/\..*//'
+app",
+Count number of java file,find ./src/main -type f -name '*.java' | wc -l,,
+Find and execute command upon,"find . -name '*.log' -exec rm {} \;
+find . -name '*.log' -exec rm '{}' ';'","{} is a symbolic representation of the current pathname, and the semicolon is a required delimiter indicating the end of the command.",
+"Most Used Directories
+",/home ,A user’s home directory; each user has a directory under the /home directory where she can store her files. This is one of the few places where the user should always have the right to create and manage files.,
+,/root ,Root user’s home directory; the system administrator account on the system is called the root user. The home directory for the root user isn’t under the /home directory; instead it is under the /root directory,
+,/bin,Executables (programs); most of the commands you execute as a regular user are placed here or in the /usr/bin directory.,
+,/usr/bin,Executables (programs); most of the commands you execute as a regular user are placed here or in the /bin directory,
+,/sbin,Executables (programs) for system administrators; most of the commands you execute as a system administrator are placed here or in the /usr/sbin directory,
+,/usr/sbin,Executables (programs) for system administrators; most of the commands you execute as a system administrators are placed here or in the /sbin directory,
+,/media,"Removable media (could also be /run/media); this is where you find the files for removable devices, such as CD-ROMs and USB drives",
+,/tmp,"Temporary files; typically, programs store files in this directory rather than placing files in a user’s home directory",
+,,,
+The file Command,file /usr/share/dict/linux.words,,
+The cat Command,cat -n ./hello.txt,"short for concatenate
+-n     used to show number lines",
+,,,
+The more and less Commands,ls -l /etc | more,"The problem with the cat command comes about when trying to display large files. You will discover that it doesn’t pause at any point during display of the file, but rather it scrolls through the file as if you had some superhero speed-reading skill.
+
+To pause the display while displaying the contents of large files, use the more or the less commands:
+
+Why Both more and less?
+
+Why two commands that do essentially the same thing? The more command is the original and the less command is an “improved version” of the more command (hence giving rise to the joke “less does more than more”).
+
+In reality, the extra features provided by the less command are less-often used features, at least for most Linux users. The more command is also useful because it is on every Linux (and Unix, MacOS, and Windows) system in the world. The less command is part of an optional software package and not available by default on many systems.",
+,"Commands to control the display while using the more or less commands:
+
+Spacebar    Scroll down one screen
+Enter       Scroll down one line
+h           Displays help screen (summary of commands)
+q           Exit
+/{pattern}  Search for {pattern}
+n           Find next occurrence of previous {pattern}
+:f          Displays filename and current line number",,
+tail - displays the last n lines of a file,tail -n 5 /etc/passwd,-n number,
+"wc - To display statistical information about a file, including the number of lines, words, and characters in the file",,"-c     Display number of bytes
+-m    Display number of characters (different than number of bytes for non-text files)
+-l      Display number of lines
+-w    Display the number of words",
+,,,
+awk - pattern-directed scanning and processing language ,"echo 'ajay manager account 45000
+sunil clerk account 25000
+varun manager sales 50000
+amit manager account 47000
+tarun peon sales 15000
+deepak clerk sales 23000
+sunil peon sales 13000
+satvik director purchase 80000 ' > employee.txt
+
+
+# employee.txt
+ajay manager account 45000
+sunil clerk account 25000
+varun manager sales 50000
+amit manager account 47000
+tarun peon sales 15000
+deepak clerk sales 23000
+sunil peon sales 13000
+satvik director purchase 80000",,
+Use of NR built-in variables (Display Line Number),"awk '{print NR "" - ""  $1,$4}' employee.txt
+
+OUTPUT:
+1 - ajay 45000
+2 - sunil 25000
+3 - varun 50000
+4 - amit 47000
+5 - tarun 15000
+6 - deepak 23000
+7 - sunil 13000
+8 - satvik 80000","NR:   NR command keeps a current count of the number of input records
+FS:    FS command contains the field separator character which is used to divide fields on the input line. The default is “white space”",
+,,,
+Print the lines which matches with the given pattern,"# filter by ""manager""
+awk '/manager/ {print}' employee.txt 
+
+OUTPUT:
+ajay manager account 45000
+varun manager sales 50000
+amit manager account 47000",,
+Use of NF built-in variables (Display Last Field),"# display first and last fields
+$ awk '{print $1,$NF}' employee.txt 
+
+OUTPUT:
+ajay 45000
+sunil 25000
+varun 50000
+amit 47000
+tarun 15000
+deepak 23000
+sunil 13000
+satvik 80000","NF (Number of Fields):   NF command keeps a count of the number of fields within the current input record
+
+$NF refers to the value of the last field",
+Who earns the top $$$,"awk '{ if ($4 > max) max = $4 } END { print max }' employee.txt
+
+OUTPUT: 
+80000",,
+Who earns less than 10K,awk 'length($4) < 5' employee.txt,,
+Use awk to calculate average,"awk '{ total += $4; count++ } END { print total/count }' employeee.txt
+
+OUTPUT:
+37250",,
+,,,
+Turning separate lines into comma separated list with quoted entries,"# sed 's/^\|$/""/g' matches either the begining or ending of a line and replace it with a double quote "" 
+$ echo '37746
+37789
+38277
+38310' | sed 's/^\|$/""/g'
+
+OUTPUT:
+""37746""
+""37789""
+""38277""
+""38310""
+
+# use paste to merge lines from standard input (-), separates lines with comma "","" in between
+
+$ echo '37746
+37789
+38277
+38310' | sed 's/^\|$/""/g' |  paste -s -d, -
+
+
+OUTPUT:
+""37746"",""37789"",""38277"",""38310""
+","sed: 
+ ""abc\|def'   matches either `abc' or `def'
+
+paste - merge lines of files
+  -d, --delimiters=LIST    
+             use List as delimiter instead of TAB
+  -s, --serial        
+             paste one file at a time instead of in parallel 
+  when [FILE] is ""-"", read from standard input
+
+
+^\|$    match begining of a line (^) or end of a line ($)",
+,,,
+Print Current Operation System,"$ echo ""OSTYPE=$OSTYPE""
+
+OSTYPE=darwin17.0",,
+Am I Mac OS,"$ echo ${OSTYPE} | grep -ie '^Darwin'
+
+darwin17.0",,
+Redirect output of Echo and append to file,$ echo 'add to the end' >> input.txt,,
+Redirect output of Echo and replace the content of a file,$ echo 'replace existing content' > input.txt,,
+,,,
+Print host IP address,$ ip route show | awk '/default/ {print $3}',,
+,,,
+???,$ sudo su -,,
+,,,
+print effective userid,"$ whoami
+chenzhongyu",,
+id - print real and effective user and group IDs,"$ id -gn
+staff
+$ id -u
+501"," -u, --user   print only the effective user ID
+ -g, --group  print only the effective group ID
+ -n, --name   print a name instead of a number, for -ugG",
+chown,"# change file ownship to user/group
+$ sudo chown vagrant:vagrant /etc/external.properties",,
+chmod ,"$ chmod 700 workfolder
+","Permission numbers
+0 = ---
+1 = --x
+2 = -w-
+3 = -wx
+4 = r-
+5 = r-x
+6 = rw-
+7 = rwx",
+print out the environment,$ printenv,,
+.pid file,e.g:  /var/run/babylon-filestore-service/babylon-filestore-service.pid,"The pid files contains the process id (a number) of a given program. For example, Apache HTTPD may write its main process number to a pid file - which is a regular text file, nothing more than that - and later use the information there contained to stop itself. You can also use that information to kill the process yourself, using cat filename.pid | xargs kill",
+"netstat  
+Print network connections, routing tables, interface statistics, masquerade connections, and multicast memberships
+",$ netstat -ntlp |grep 8080,"-p  --program    Show the PID and name of the program to which each socket belongs.
+-l   --listening     Show only listening sockets. (These are omitted by default.)
+-t   --tcp
+-u  --udp
+--numeric , -n    Show numerical addresses instead of trying to determine symbolic host, port or user names.",
+"tar
+Create tar archive file","$ find . -name '*.txt' |  tar czf playground.tgz -T -
+
+$ tar --list -f playground.tgz
+./foo2.txt
+./foo.txt
+","-z  Filter the archive using gzip
+-j   Filter the archive through bzip2
+-T filename, --files-from filename
+         In x or t mode, tar will read the list of names to be extracted from filename.  In c mode, tar will read names to be archived from filename.
+
+If the filename - is specified, it is taken to mean standard input or output, as needed",
+"rsync
+Remote/local sync ","$ rsync -av src/ dest
+building file list ... done
+./
+a.txt
+b.txt
+
+sent 196 bytes  received 70 bytes  532.00 bytes/sec
+total size is 4  speedup is 0.02
+
+$ ll dest
+a.txt
+b.txt  
+
+# add new file in /dest
+$ echo 'c' > dest/c.txt
+$ rsync -av --delete src/ dest
+building file list ... done
+deleting c.txt
+./
+
+sent 100 bytes  received 26 bytes  252.00 bytes/sec
+total size is 4  speedup is 0.03","if we append a trailing / to the source directory name, rsync will copy only the contents of the source directory and not the directory itself
+
+--delete     delete extraneous files from dest dirs no longer exist in source directory
+",
+Display non-printing characters (TAB etc),"$ echo 'I\tlove\tSH' | cat -t
+I^Ilove^ISH","-t      Display non-printing characters (see the -v option), and display tab characters as `^I'",
+"expand
+expand tabs to spaces","$echo 'I\tlove\tSH' | expand | cat -t
+I       love    SH",,
+Patch a file,"$echo 'I live in Shanghai' > oldfile.txt
+$echo 'I live in Melbourne' > newfile.txt
+
+$diff -Naur oldfile.txt newfile.txt > patchfile.txt
+$cat patchfile.txt
+--- oldfile.txt        2019-12-28 23:00:02.000000000 +1100
++++ newfile.txt        2019-12-28 23:00:59.000000000 +1100
+@@ -1 +1 @@
+-I live in Shanghai
++I live in Melbourne
+
+$patch < patchfile.txt
+$cat oldfile.txt
+I live in Melbourne","In this example, we created a diff file named patchfile.txt and then used the patch program to apply the patch. Note that we did not have to specify a target file to patch, as the diff file (in unified format) already contains the filenames in the header. Once the patch is applied, we can see that file1.txt now matches file2.txt.",
+scp,"# upload a local directory (-r recursively)
+scp -r /path/local/source user@ssh.example.com:/path/remote/destination 
+
+# download a remote directory to local (-r recursively)
+scp -r user@ssh.example.com:/path/remote/source /path/local/destination",,
